@@ -1,0 +1,35 @@
+{
+  "aid": "main",
+  "uid": "2rPTzF3EQmboU7Wh89HeVMn5M8X2",
+  "refreshToken": "AMf-vByA55J4bLMalMYWn74sGrRTymROx9dhkO2tytBWEte6iRE_nUWD3Mdv7zfBqijwl5f0SVycbZDtc_FazXrxsuz3TSw1wg671KOlpq8mysnTjwqcWWMJp9pEsofKxFKGZuYQlhM_sCesm8iZR5JbD04Coh2fNN0KVIO3xDAdR_kx9OQdUFc",
+  "owner": "wwzs0ROZLVe33OH5c39nXHBHGSs2",
+  "ownerEmail": "axl1262ytt@gmail.com",
+  "users": {},
+  "servers": {
+    "s42062c2425": {
+      "name": "mokpop",
+      "kind": "paper",
+      "version": "1.21.11",
+      "mode": "auto",
+      "minRam": 4098,
+      "maxRam": 8093,
+      "port": 25565,
+      "javaMin": 25,
+      "owner": "wwzs0ROZLVe33OH5c39nXHBHGSs2",
+      "ownerEmail": "axl1262ytt@gmail.com"
+    }
+  },
+  "claim": "",
+  "key": "8e197fceb971a854883b",
+  "ram": 6144,
+  "version": "26.3",
+  "kind": "paper",
+  "limits": {
+    "maxServersPerUser": 3,
+    "maxRamMb": 4096
+  },
+  "ports": {
+    "min": 25565,
+    "max": 25700
+  }
+}

@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MCHost</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#1c1f24;--sf:#252a31;--sf2:#2d333b;--ln:#383f49;--tx:#d5d9df;--mu:#8b93a1;--ac:#d9a441;--gn:#5fa55a;--rd:#c4574f;color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--tx);font:14px/1.45 "IBM Plex Sans",system-ui,sans-serif}
+button,input,select,textarea{font:inherit;color:inherit}
+button{background:var(--sf2);border:1px solid var(--ln);border-radius:3px;padding:6px 14px;cursor:pointer}
+button:hover:not(:disabled){background:#363d47}
+button:disabled{opacity:.4;cursor:not-allowed}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--ac);outline-offset:1px}
+.b-go{background:#3d6b39;border-color:#4d8248}.b-go:hover:not(:disabled){background:#477b42}
+.b-stop{background:#7a3b36;border-color:#98504a}.b-stop:hover:not(:disabled){background:#8b443e}
+.b-kill{background:transparent;border-color:var(--rd);color:#e08b84}
+.b-ac{background:var(--ac);border-color:var(--ac);color:#1c1f24;font-weight:600}.b-ac:hover:not(:disabled){background:#e3b254}
+input[type=text],input[type=password],input[type=email],input[type=number],select,textarea{background:#16181c;border:1px solid var(--ln);border-radius:3px;padding:6px 9px;width:100%}
+.mono{font-family:"IBM Plex Mono",ui-monospace,Consolas,monospace}
+.row{display:flex;gap:8px;align-items:center}.row.wrap{flex-wrap:wrap}
+.hint{color:var(--mu);margin:6px 0}
+.warn{background:#3a3220;border:1px solid #5b4b25;border-radius:3px;padding:8px 12px;color:#ecd08f;margin:0 0 12px}
+.seg{display:flex}
+.seg button{border-radius:0;margin-left:-1px}
+.seg button:first-child{border-radius:3px 0 0 3px;margin:0}
+.seg button:last-child{border-radius:0 3px 3px 0}
+.seg button.on{background:var(--ac);border-color:var(--ac);color:#1c1f24;font-weight:600}
+.fld{display:flex;flex-direction:column;gap:3px;color:var(--mu);font-size:13px;min-width:140px}
+.fld input,.fld select{color:var(--tx)}
+
+#login{height:100%;display:grid;place-items:center;padding:16px}
+#lf{width:360px;max-width:100%;background:var(--sf);border:1px solid var(--ln);border-radius:4px;padding:24px;display:flex;flex-direction:column;gap:10px}
+#lf h1{font-size:20px;margin:0}
+#lf .seg button{flex:1}
+#aerr{color:#e58b84;min-height:18px}
+#asub{background:var(--ac);color:#1c1f24;border-color:var(--ac);font-weight:600}
+
+#app{height:100%;display:flex;flex-direction:column}
+#top{display:flex;align-items:center;gap:14px;padding:10px 16px;border-bottom:1px solid var(--ln);background:var(--sf)}
+#top h1{font-size:16px;margin:0;font-weight:600;cursor:pointer}
+#crumb{color:var(--mu)}
+#who{color:var(--mu)}
+.page{flex:1;overflow:auto;padding:20px;min-height:0}
+.page h2{font-size:18px;margin:0}
+.card{background:var(--sf);border:1px solid var(--ln);border-radius:4px;padding:16px;max-width:620px;margin-bottom:14px}
+.card h3{font-size:15px;margin:0 0 4px}
+.card p{margin:0 0 12px;color:var(--mu)}
+.meter{height:8px;background:#16181c;border:1px solid var(--ln);border-radius:2px;overflow:hidden;margin:8px 0}
+.meter i{display:block;height:100%;background:#5d7894}
+#cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-top:14px}
+.sc{background:var(--sf);border:1px solid var(--ln);border-radius:4px;padding:14px;cursor:pointer;display:flex;flex-direction:column;gap:4px}
+.sc:hover{border-color:var(--ac)}
+.sc b{font-size:15px}
+.sc span{color:var(--mu)}
+
+.dot{width:9px;height:9px;border-radius:50%;background:#555;display:inline-block;margin-right:6px}
+.dot.online{background:var(--gn)}.dot.starting,.dot.installing{background:var(--ac)}.dot.stopping{background:#d98441}.dot.offline{background:var(--rd)}
+
+#srv{flex:1;min-height:0;display:grid;grid-template-columns:200px 1fr;grid-template-rows:auto 1fr}
+.shead{grid-column:1/3;display:flex;align-items:center;gap:14px;padding:10px 16px;border-bottom:1px solid var(--ln);flex-wrap:wrap}
+.shead h2{font-size:16px;margin:0;font-weight:600}
+.ctrl{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+nav{border-right:1px solid var(--ln);padding:10px 0;background:var(--sf)}
+nav a{display:block;padding:9px 18px;color:var(--mu);cursor:pointer;border-left:3px solid transparent}
+nav a:hover{color:var(--tx)}
+nav a.on{color:var(--tx);border-left-color:var(--ac);background:var(--sf2)}
+main{overflow:hidden;display:flex;flex-direction:column;min-height:0}
+.tab{display:none;flex:1;min-height:0;flex-direction:column;padding:14px 16px;gap:10px;overflow:auto}
+.tab.on{display:flex}
+#bar{display:none;background:#3a3220;border-bottom:1px solid #5b4b25;padding:6px 16px;color:#ecd08f}
+
+#con{flex:1;min-height:200px;margin:0;overflow:auto;background:#121417;border:1px solid var(--ln);border-radius:3px;padding:10px;font-size:12.5px;line-height:1.5;white-space:pre-wrap;word-break:break-all}
+#con .w{color:#e0b85a}#con .e{color:#e57c74}
+
+.crumbs{color:var(--mu)}
+.crumbs a{color:var(--tx);cursor:pointer;text-decoration:underline;text-decoration-color:var(--ln)}
+table{border-collapse:collapse;width:100%}
+th{text-align:left;color:var(--mu);font-weight:500;padding:6px 10px;border-bottom:1px solid var(--ln)}
+td{padding:6px 10px;border-bottom:1px solid #2b3037}
+tr.f:hover td{background:var(--sf)}
+td.n a{cursor:pointer}td.n a:hover{color:var(--ac)}
+td.act{text-align:right;white-space:nowrap}
+td.act button{padding:2px 9px;font-size:12.5px}
+.list{flex:1;min-height:120px;overflow:auto;border:1px solid var(--ln);border-radius:3px}
+#editor{display:none;flex:1;min-height:0;flex-direction:column;gap:8px}
+#editor textarea{flex:1;resize:none;font-size:13px;line-height:1.5;white-space:pre;tab-size:2}
+.vrow{display:flex;align-items:center;padding:7px 12px;border-bottom:1px solid #2b3037;gap:10px}
+.vrow:last-child{border:0}
+.vrow .v{flex:1}
+.tag{color:var(--ac);font-size:12px}
+.prow{display:flex;gap:12px;align-items:center;padding:10px 12px;border-bottom:1px solid #2b3037}
+.prow img,.prow .ph{width:40px;height:40px;border-radius:4px;flex:none;background:var(--sf2);display:grid;place-items:center;color:var(--mu);font-weight:600}
+.prow .pi{flex:1;min-width:0}
+.prow .pd{color:var(--mu);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.prow .pm{color:var(--mu);font-size:12.5px}
+.prow a{color:var(--tx);text-decoration-color:var(--ln)}
+input[type=checkbox]{accent-color:var(--ac);width:15px;height:15px;vertical-align:middle}
+label.ck{display:inline-flex;gap:6px;align-items:center;margin-right:10px}
+
+#modal{position:fixed;inset:0;background:rgba(10,11,13,.68);display:grid;place-items:center;z-index:20;padding:16px}
+#mbox{width:420px;max-width:100%;background:var(--sf);border:1px solid var(--ln);border-radius:4px;padding:20px;box-shadow:0 12px 40px rgba(0,0,0,.5)}
+#mbox h2{font-size:16px;margin:0 0 6px}
+#mbox p{color:var(--mu);margin:0 0 10px;white-space:pre-line}
+#mbox .row{justify-content:flex-end;margin-top:16px}
+#toast{position:fixed;right:16px;bottom:16px;display:flex;flex-direction:column;gap:6px;z-index:30}
+#toast div{background:var(--sf2);border:1px solid var(--ln);border-left:3px solid var(--ac);padding:8px 12px;border-radius:3px;max-width:340px}
+#toast div.err{border-left-color:var(--rd)}
+
+@media(max-width:700px){#srv{grid-template-columns:1fr;grid-template-rows:auto auto 1fr}.shead{grid-column:1}nav{display:flex;border-right:0;border-bottom:1px solid var(--ln);padding:0;overflow-x:auto}nav a{border-left:0;border-bottom:3px solid transparent;padding:10px 14px;white-space:nowrap}nav a.on{border-bottom-color:var(--ac)}.ctrl{margin-left:0}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<div id="login" hidden>
+  <form id="lf">
+    <h1>MCHost</h1>
+    <div class="seg" id="atabs"><button type="button" class="on" data-m="in">Sign in</button><button type="button" data-m="up">Create account</button></div>
+    <input type="email" id="em" placeholder="Email" autocomplete="email">
+    <input type="password" id="pw" placeholder="Password" autocomplete="current-password">
+    <input type="password" id="pw2" placeholder="Repeat password" autocomplete="new-password" hidden>
+    <div id="aerr"></div>
+    <button type="submit" id="asub">Sign in</button>
+  </form>
+</div>
+
+<div id="app" hidden>
+  <div id="top">
+    <h1 id="brand">MCHost</h1><span id="crumb"></span>
+    <span style="flex:1"></span>
+    <span id="who"></span><button id="bOut">Sign out</button>
+  </div>
+
+  <div class="page" id="home">
+    <div class="row wrap"><h2>Servers</h2><span style="flex:1"></span><button class="b-ac" id="bNew" hidden>Create server</button></div>
+    <div id="hstat"></div>
+    <div id="cards"></div>
+  </div>
+
+  <div class="page" id="create" hidden>
+    <div class="row"><h2>Create server</h2></div>
+    <div class="card" style="margin-top:14px">
+      <div class="row wrap" style="align-items:flex-end">
+        <label class="fld" id="chostw" hidden><span>Host</span><select id="chost"></select></label>
+        <label class="fld" style="flex:1"><span>Name</span><input type="text" id="cname" maxlength="40" placeholder="Survival"></label>
+        <label class="fld"><span>Type</span><select id="ckind"><option value="paper">Paper (plugins)</option><option value="vanilla">Vanilla</option></select></label>
+        <label class="fld"><span>Version</span><select id="cver"></select></label>
+      </div>
+    </div>
+    <div class="card"><h3>Memory</h3><div id="cram"></div><p class="hint" id="cfree"></p></div>
+    <div class="row"><button class="b-ac" id="bMake">Create server</button><button id="bCancel">Cancel</button></div>
+  </div>
+
+  <div id="srv" hidden>
+    <div class="shead">
+      <h2 id="sname"></h2>
+      <span><span class="dot" id="dot"></span><span id="stxt" style="color:var(--mu)"></span></span>
+      <div class="ctrl">
+        <button class="b-go" id="bStart">Start</button>
+        <button class="b-stop" id="bStop">Stop</button>
+        <button class="b-kill" id="bKill">Kill</button>
+      </div>
+    </div>
+    <nav>
+      <a data-t="console" class="on">Console</a>
+      <a data-t="files" data-need="files">Files</a>
+      <a data-t="versions" data-need="versions">Versions</a>
+      <a data-t="plugins" data-need="files">Plugins</a>
+      <a data-t="users" data-need="owner">Users</a>
+      <a data-t="settings" data-need="owner">Settings</a>
+    </nav>
+    <main>
+      <div id="bar"></div>
+
+      <section class="tab on" id="t-console">
+        <div class="row"><button id="bClear">Clear console</button></div>
+        <pre id="con" class="mono"></pre>
+        <div class="row"><input type="text" id="cin" class="mono" placeholder="Type a command and press Enter" autocomplete="off" spellcheck="false"><button id="bSend">Send</button></div>
+      </section>
+
+      <section class="tab" id="t-files">
+        <div id="browser" style="display:flex;flex-direction:column;gap:10px;flex:1;min-height:0">
+          <div class="row wrap">
+            <span class="crumbs" id="crumbs"></span>
+            <span style="flex:1"></span>
+            <button id="bPl">Upload plugins</button><button id="bUp">Upload files</button><button id="bNewF">New file</button><button id="bNewD">New folder</button><button id="bRef">Refresh</button>
+          </div>
+          <div class="list"><table><thead><tr><th>Name</th><th style="width:90px">Size</th><th style="width:150px">Modified</th><th style="width:170px"></th></tr></thead><tbody id="ftb"></tbody></table></div>
+        </div>
+        <div id="editor">
+          <div class="row"><b class="mono" id="efile"></b><span style="flex:1"></span><span id="edirty" class="tag"></span><button class="b-go" id="bSave">Save</button><button id="bClose">Close</button></div>
+          <textarea id="etext" class="mono" spellcheck="false"></textarea>
+        </div>
+      </section>
+
+      <section class="tab" id="t-versions">
+        <div class="row wrap">
+          <select id="vkind" style="width:auto"><option value="paper">Paper</option><option value="vanilla">Vanilla</option></select>
+          <input type="text" id="vq" placeholder="Filter, for example 1.21" style="width:220px">
+          <span style="color:var(--mu)" id="vcur"></span>
+        </div>
+        <div class="list" id="vlist"></div>
+      </section>
+
+      <section class="tab" id="t-plugins">
+        <div class="row wrap">
+          <div class="seg"><button id="pmA" class="on">Automatic</button><button id="pmM">Manual</button></div>
+          <span id="pauto" style="color:var(--mu)"></span>
+          <span class="row" id="pman" hidden>
+            <select id="pkind" style="width:auto"><option value="paper">Paper</option><option value="spigot">Spigot</option><option value="bukkit">Bukkit</option><option value="purpur">Purpur</option><option value="folia">Folia</option></select>
+            <input type="text" id="pver" placeholder="Version, e.g. 1.21.4" style="width:170px" autocomplete="off">
+          </span>
+        </div>
+        <div class="row wrap">
+          <input type="text" id="pq" placeholder="Search plugins on Modrinth" style="flex:1;min-width:200px" autocomplete="off">
+          <select id="psort" style="width:auto"><option value="relevance">Relevance</option><option value="downloads">Most downloads</option><option value="newest">Newest</option><option value="updated">Recently updated</option></select>
+        </div>
+        <div class="list" id="plist"></div>
+      </section>
+
+      <section class="tab" id="t-users">
+        <div class="warn">The Files and Versions permissions let a person put code on your PC, because plugins and server jars run with your account's permissions. Only give them to people you trust.</div>
+        <div class="card">
+          <h3>Add a user to this server</h3>
+          <p>They need to create an account on this page first, then enter their email here.</p>
+          <div class="row wrap">
+            <input type="email" id="uemail" placeholder="Their email" style="flex:1;min-width:200px">
+            <button class="b-go" id="bAddU">Add user</button>
+          </div>
+          <div style="margin-top:10px">
+            <label class="ck"><input type="checkbox" id="pc" checked> Console and controls</label>
+            <label class="ck"><input type="checkbox" id="pf"> Files and plugins</label>
+            <label class="ck"><input type="checkbox" id="pv"> Versions</label>
+          </div>
+        </div>
+        <div class="list" style="min-height:80px;flex:none">
+          <table><thead><tr><th>User</th><th>Console</th><th>Files</th><th>Versions</th><th></th></tr></thead><tbody id="utb"></tbody></table>
+        </div>
+      </section>
+
+      <section class="tab" id="t-settings">
+        <div class="card">
+          <h3>Name</h3>
+          <input type="text" id="sn" maxlength="40">
+        </div>
+        <div class="card">
+          <h3>Memory</h3>
+          <p id="sraminfo"></p>
+          <div id="sram"></div>
+        </div>
+        <div class="row"><button class="b-ac" id="bSet">Save settings</button></div>
+        <div class="card" style="margin-top:14px">
+          <h3>Connect</h3>
+          <p id="saddr"></p>
+        </div>
+        <div class="card">
+          <h3>Delete server</h3>
+          <p>Removes the server and its files from the host. This cannot be undone.</p>
+          <button class="b-stop" id="bDel">Delete this server</button>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+
+<div id="modal" hidden>
+  <form id="mbox">
+    <h2 id="mt"></h2>
+    <p id="mp"></p>
+    <input type="text" id="mi" autocomplete="off" spellcheck="false">
+    <div class="row"><button type="button" id="mno">Cancel</button><button type="submit" id="myes">OK</button></div>
+  </form>
+</div>
+<input type="file" id="upin" multiple hidden>
+<div id="toast"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyAew9fVw91DarhE9mUUIy2VZ2sCVxrAX44",
+  authDomain: "mchost-9516b.firebaseapp.com",
+  databaseURL: "https://mchost-9516b-default-rtdb.firebaseio.com",
+  projectId: "mchost-9516b",
+  storageBucket: "mchost-9516b.firebasestorage.app",
+  messagingSenderId: "692774609042",
+  appId: "1:692774609042:web:dd447dc87803450d22864b",
+  measurementId: "G-ED4W6V8CNT"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth(), db = firebase.database();
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const ekey = e => e.toLowerCase().replace(/[.#$\[\]\/]/g, ',');
+const gb = mb => (mb / 1024).toFixed(1).replace(/\.0$/, '') + ' GB';
+
+// There is one host (your agent) and it always has this ID. Every server runs on it.
+const HOST_ID = 'main';
+
+let me = null, cur = null, skew = 0;
+const SV = {}, HI = {}, ACL = {}, ownerIdx = {}, HS = new Set(), subs = {};
+
+function toast(msg, err) {
+  const d = document.createElement('div');
+  d.textContent = msg; if (err) d.className = 'err';
+  $('toast').appendChild(d); setTimeout(() => d.remove(), err ? 6000 : 3500);
+}
+
+/* ---------- popups ---------- */
+const ui = (() => {
+  let done = null;
+  const m = $('modal'), inp = $('mi');
+  const close = v => { if (!done) return; const d = done; done = null; m.hidden = true; d(v); };
+  const cancel = () => close(inp.hidden ? false : null);
+  function open(o) {
+    if (done) cancel();
+    return new Promise(res => {
+      $('mt').textContent = o.title;
+      $('mp').textContent = o.text || ''; $('mp').hidden = !o.text;
+      inp.hidden = !o.input; inp.value = o.value || '';
+      const y = $('myes'); y.textContent = o.ok; y.className = o.danger ? 'b-stop' : 'b-go';
+      done = res; m.hidden = false;
+      if (o.input) { inp.focus(); inp.select(); } else y.focus();
+    });
+  }
+  $('mbox').onsubmit = e => { e.preventDefault(); close(inp.hidden ? true : (inp.value.trim() || null)); };
+  $('mno').onclick = cancel;
+  m.onmousedown = e => { if (e.target === m) cancel(); };
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') cancel(); });
+  return {
+    confirm: (title, text, o = {}) => open({ title, text, ok: o.ok || 'Confirm', danger: o.danger }),
+    prompt: (title, value = '', ok = 'OK') => open({ title, input: true, value, ok }),
+  };
+})();
+
+/* ---------- accounts ---------- */
+let amode = 'in';
+document.querySelectorAll('#atabs button').forEach(b => b.onclick = () => {
+  amode = b.dataset.m;
+  document.querySelectorAll('#atabs button').forEach(x => x.classList.toggle('on', x === b));
+  $('pw2').hidden = amode === 'in'; $('asub').textContent = amode === 'in' ? 'Sign in' : 'Create account';
+  $('pw').autocomplete = amode === 'in' ? 'current-password' : 'new-password'; $('aerr').textContent = '';
+});
+const authMsg = e => ({
+  'auth/email-already-in-use': 'An account with that email already exists.',
+  'auth/weak-password': 'Use a password with at least 6 characters.',
+  'auth/invalid-email': 'That email address does not look right.',
+  'auth/invalid-credential': 'Wrong email or password.', 'auth/wrong-password': 'Wrong email or password.', 'auth/user-not-found': 'Wrong email or password.',
+  'auth/too-many-requests': 'Too many attempts. Wait a minute and try again.',
+  'auth/operation-not-allowed': 'Email and password sign-in is not switched on in Firebase Authentication yet.'
+}[e.code] || e.message);
+$('lf').onsubmit = async e => {
+  e.preventDefault();
+  const em = $('em').value.trim(), pw = $('pw').value;
+  $('aerr').textContent = '';
+  if (!em || !pw) { $('aerr').textContent = 'Enter your email and password.'; return; }
+  try {
+    if (amode === 'up') {
+      if (pw !== $('pw2').value) { $('aerr').textContent = 'The passwords do not match.'; return; }
+      const c = await auth.createUserWithEmailAndPassword(em, pw);
+      await db.ref('profiles/' + c.user.uid).set({ email: em });
+      await db.ref('emailIndex/' + ekey(em)).set(c.user.uid);
+    } else await auth.signInWithEmailAndPassword(em, pw);
+  } catch (err) { $('aerr').textContent = authMsg(err); }
+};
+$('bOut').onclick = () => auth.signOut();
+
+auth.onAuthStateChanged(u => {
+  cleanup();
+  if (!u) { me = null; $('app').hidden = true; $('login').hidden = false; return; }
+  me = u; $('login').hidden = true; $('app').hidden = false;
+  $('who').textContent = u.email;
+  db.ref('profiles/' + u.uid).set({ email: u.email }).catch(() => {});
+  db.ref('emailIndex/' + ekey(u.email)).set(u.uid).catch(() => {});
+  go('home');
+  if (HOST_ID) { HS.add(HOST_ID); watchHost(HOST_ID); }
+  render();
+});
+function watchHost(a) {
+  const tag = 'h:' + a;
+  on(tag, db.ref(`agents/${a}/info`), s => { (HI[a] = HI[a] || {}).info = s.val(); render(); });
+  on(tag, db.ref(`agents/${a}/stats`), s => { (HI[a] = HI[a] || {}).stats = s.val(); render(); });
+  on(tag, db.ref(`agents/${a}/acl/${me.uid}`), s => {
+    const v = ACL[a] = s.val();
+    if (!v) { syncServers(a, {}, false); render(); return; }
+    if (v.owner) {
+      if (!ownerIdx[a]) {
+        ownerIdx[a] = 1;
+        on(tag, db.ref(`agents/${a}/index`), x => {
+          const all = { view: true, control: true, files: true, versions: true }, map = {};
+          Object.keys(x.val() || {}).forEach(k => map[k] = all);
+          syncServers(a, map, true);
+        });
+      }
+    } else syncServers(a, v.servers || {}, false);
+    render();
+  });
+}
+function dropHost(a) { off('h:' + a); HS.delete(a); delete HI[a]; delete ACL[a]; delete ownerIdx[a]; syncServers(a, {}, false); }
+function on(tag, ref, fn) {
+  ref.on('value', fn, err => console.warn(ref.toString(), err.message));
+  (subs[tag] = subs[tag] || []).push(ref);
+}
+function off(tag) { (subs[tag] || []).forEach(r => r.off()); delete subs[tag]; }
+function cleanup() {
+  Object.keys(subs).forEach(off);
+  [SV, HI, ACL, ownerIdx].forEach(o => Object.keys(o).forEach(k => delete o[k]));
+  HS.clear(); cur = null;
+}
+db.ref('.info/serverTimeOffset').on('value', x => { skew = x.val() || 0; });
+const agentUp = a => { const i = HI[a] && HI[a].info; return !!i && Date.now() + skew - i.ts < 20000; };
+
+function syncServers(aid, map, mine) {
+  for (const [sid, perms] of Object.entries(map)) {
+    const k = aid + '|' + sid;
+    if (!SV[k]) {
+      SV[k] = { aid, sid, mine: false, perms };
+      on('sv:' + k, db.ref(`agents/${aid}/servers/${sid}/meta`), s => { if (SV[k]) { SV[k].meta = s.val(); render(); } });
+      on('sv:' + k, db.ref(`agents/${aid}/servers/${sid}/status`), s => { if (SV[k]) { SV[k].status = s.val(); render(); } });
+    }
+    SV[k].perms = perms; SV[k].mine = mine || !!(perms && perms.owner);
+  }
+  Object.keys(SV).filter(k => SV[k].aid === aid && !(SV[k].sid in map)).forEach(k => {
+    off('sv:' + k); delete SV[k]; if (cur === k) go('home');
+  });
+  render();
+}
+
+/* ---------- pages ---------- */
+function go(page) {
+  ['home', 'create'].forEach(p => $(p).hidden = p !== page);
+  $('srv').hidden = page !== 'srv';
+  if (page !== 'srv') { off('con'); off('mem'); cur = null; $('crumb').textContent = ''; }
+  render();
+}
+$('brand').onclick = () => go('home');
+setInterval(() => { if (me) render(); }, 5000);
+function render() {
+  if (!me) return;
+  if (!$('home').hidden) renderHome();
+  if (!$('srv').hidden && cur && SV[cur]) renderSrv();
+}
+
+function renderHome() {
+  $('bNew').hidden = !HOST_ID;
+  const box = $('hstat'); box.innerHTML = '';
+  const d = document.createElement('div'); d.className = 'card'; d.style.marginTop = '14px';
+  if (!HOST_ID) d.innerHTML = '<h3>Host not set up</h3><p style="margin:0;color:#ecd08f">Run <b>node agent.js</b> on the hosting PC and paste the Host ID it prints into <b>HOST_ID</b> near the top of the script in index.html.</p>';
+  else {
+    const i = HI[HOST_ID] || {}, t = i.stats;
+    if (agentUp(HOST_ID) && t) {
+      const used = t.totalMb - t.freeMb;
+      d.innerHTML = `<h3>Host online</h3><div class="meter"><i style="width:${Math.min(100, used / t.totalMb * 100)}%"></i></div><p style="margin:0">${gb(used)} in use of ${gb(t.totalMb)} · <b style="color:var(--tx)">${gb(t.availMb)}</b> available for new servers</p>`;
+    } else d.innerHTML = '<h3>Host offline</h3><p style="margin:0;color:#ecd08f">The hosting PC is not connected right now, so servers cannot be created or started.</p>';
+  }
+  box.appendChild(d);
+  const list = Object.entries(SV).sort((x, y) => ((x[1].meta || {}).name || '').localeCompare((y[1].meta || {}).name || ''));
+  const cards = $('cards'); cards.innerHTML = '';
+  if (!list.length) cards.innerHTML = '<p class="hint">No servers yet.</p>';
+  list.forEach(([k, v]) => {
+    const m = v.meta || {}, st = v.status || {}, up = agentUp(v.aid), s = up ? (st.state || 'offline') : 'offline';
+    const hn = ((HI[v.aid] || {}).info || {});
+    const d = document.createElement('div'); d.className = 'sc';
+    d.innerHTML = `<b>${esc(m.name || 'Loading…')}</b><span><span class="dot ${s}"></span>${up ? s[0].toUpperCase() + s.slice(1) : 'Host offline'}${st.xmx ? ' · ' + gb(st.xmx) : ''}</span><span>${m.kind ? esc(m.kind) + ' ' + esc(m.version) : 'Installing…'} · port ${m.port || '?'}</span><span>${v.mine ? (m.ownerEmail && m.ownerEmail !== me.email ? 'Owned by ' + esc(m.ownerEmail) : 'Yours') : 'Shared by ' + esc(m.ownerEmail || 'the owner')}</span>`;
+    d.onclick = () => openServer(k);
+    cards.appendChild(d);
+  });
+}
+
+/* ---------- rpc ---------- */
+function call(cmdPath, resPath, payload, timeout) {
+  return new Promise((ok, no) => {
+    const r = db.ref(cmdPath).push(), rr = db.ref(`${resPath}/${r.key}`);
+    const to = timeout && setTimeout(() => { rr.off(); no(new Error('The agent did not answer. Is agent.js running?')); }, timeout);
+    rr.on('value', s => {
+      const v = s.val(); if (!v) return;
+      rr.off(); clearTimeout(to); rr.remove();
+      v.ok ? ok(v.d) : no(new Error(v.e));
+    }, err => { clearTimeout(to); no(err); });
+    r.set(payload).catch(err => { clearTimeout(to); no(err); });
+  });
+}
+function rpc(t, a = {}, timeout = 25000) {
+  const v = SV[cur]; if (!v) return Promise.reject(new Error('No server open'));
+  const b = `agents/${v.aid}/servers/${v.sid}`;
+  return call(b + '/cmd', b + '/res', { t, uid: me.uid, ...a }, timeout);
+}
+const hrpc = (aid, t, a = {}, timeout = 25000) => call(`agents/${aid}/hcmd`, `agents/${aid}/hres`, { t, uid: me.uid, ...a }, timeout);
+const act = (t, a, timeout) => rpc(t, a, timeout).catch(e => { toast(e.message, true); throw e; });
+
+/* ---------- memory form ---------- */
+function ramForm(root, v) {
+  root.innerHTML = `<div class="seg"><button type="button">Auto</button><button type="button">Fixed</button></div><p class="hint"></p>
+    <div class="row wrap"><label class="fld"><span>Minimum (MB)</span><input type="number" step="256" min="512"></label><label class="fld"><span>Maximum (MB)</span><input type="number" step="256" min="512"></label></div>`;
+  const [bA, bF] = root.querySelectorAll('button'), hint = root.querySelector('.hint'), [fmin, fmax] = root.querySelectorAll('label');
+  const imin = fmin.querySelector('input'), imax = fmax.querySelector('input');
+  let mode = v.mode === 'fixed' ? 'fixed' : 'auto';
+  imin.value = v.minRam || 1024; imax.value = v.maxRam || 2048;
+  const draw = () => {
+    bA.classList.toggle('on', mode === 'auto'); bF.classList.toggle('on', mode === 'fixed');
+    fmin.hidden = mode === 'fixed'; fmax.querySelector('span').textContent = mode === 'fixed' ? 'RAM (MB)' : 'Maximum (MB)';
+    hint.textContent = mode === 'auto'
+      ? 'Each time the server starts, the host measures how much RAM is free and gives it an amount between the minimum and maximum. A running server keeps what it got, because Java cannot resize while running.'
+      : 'Always the same amount. The server refuses to start if the host does not have that much free.';
+  };
+  bA.onclick = () => { mode = 'auto'; draw(); }; bF.onclick = () => { mode = 'fixed'; draw(); }; draw();
+  return { get: () => ({ mode, minRam: Number(imin.value), maxRam: Number(imax.value) }) };
+}
+
+/* ---------- create server ---------- */
+let cram = null, cvers = [];
+const createHost = () => HOST_ID;
+function updateFree() {
+  const t = (HI[createHost()] || {}).stats;
+  $('cfree').textContent = t ? `This host has ${gb(t.totalMb)} total and about ${gb(t.availMb)} available right now.` : '';
+}
+$('bNew').onclick = () => {
+  if (!HOST_ID) return;
+  go('create');
+  $('cname').value = ''; cram = ramForm($('cram'), { mode: 'auto', minRam: 1024, maxRam: 4096 });
+  updateFree(); loadCreateVersions();
+};
+$('bCancel').onclick = () => go('home');
+$('ckind').onchange = loadCreateVersions;
+async function loadCreateVersions() {
+  const sel = $('cver'); sel.innerHTML = '<option>Loading…</option>';
+  try {
+    cvers = await hrpc(createHost(), 'versions', { kind: $('ckind').value }, 40000);
+    sel.innerHTML = cvers.map(v => `<option>${esc(v)}</option>`).join('');
+  } catch (e) { sel.innerHTML = '<option value="">Could not load</option>'; toast(e.message, true); }
+}
+$('bMake').onclick = async () => {
+  const r = cram.get(), name = $('cname').value.trim(), version = $('cver').value;
+  if (!name) { toast('Give the server a name', true); return; }
+  if (!version) { toast('Pick a version', true); return; }
+  if (r.maxRam < 512 || (r.mode === 'auto' && r.minRam < 512)) { toast('Memory must be at least 512 MB', true); return; }
+  if (r.mode === 'auto' && r.minRam > r.maxRam) { toast('Minimum cannot be higher than maximum', true); return; }
+  $('bMake').disabled = true;
+  try {
+    await hrpc(createHost(), 'create', { name, kind: $('ckind').value, version, email: me.email, ...r });
+    toast('Creating ' + name + '. The agent is downloading Java and the server, then it starts by itself.'); go('home');
+  } catch (e) { toast(e.message, true); }
+  $('bMake').disabled = false;
+};
+
+/* ---------- open a server ---------- */
+let sram = null;
+function openServer(k) {
+  const v = SV[k]; cur = k;
+  $('home').hidden = true; $('create').hidden = true; $('srv').hidden = false;
+  $('crumb').innerHTML = '/ <span style="color:var(--tx)"></span>'; $('crumb').lastChild.textContent = (v.meta || {}).name || '';
+  const owner = v.mine;
+  document.querySelectorAll('nav a').forEach(a => {
+    const need = a.dataset.need;
+    a.hidden = need === 'owner' ? !owner : need ? !(owner || v.perms[need]) : false;
+  });
+  document.querySelectorAll('nav a')[0].click();
+  $('con').innerHTML = ''; cwd = ''; editing = null; $('editor').style.display = 'none'; $('browser').style.display = 'flex';
+  $('vlist').innerHTML = ''; $('plist').innerHTML = ''; pkey = '';
+  on('con', db.ref(`agents/${v.aid}/servers/${v.sid}/console`), s => renderConsole(s.val()));
+  if (owner) {
+    const m = v.meta || {};
+    $('sn').value = m.name || ''; sram = ramForm($('sram'), m);
+    loadMembers();
+  }
+  render();
+}
+const labels = { offline: 'Offline', starting: 'Starting', online: 'Online', stopping: 'Stopping', installing: 'Installing' };
+function renderSrv() {
+  const v = SV[cur], m = v.meta || {}, st = v.status || {}, up = agentUp(v.aid), s = up ? (st.state || 'offline') : 'offline';
+  const ctl = v.mine || v.perms.control;
+  $('sname').textContent = m.name || '';
+  $('dot').className = 'dot ' + (up ? s : '');
+  $('stxt').textContent = up ? labels[s] + (m.version ? ` · ${m.kind} ${m.version}` : '') + (st.xmx ? ` · ${gb(st.xmx)} RAM` : '') : 'Host offline';
+  $('bStart').disabled = !ctl || !up || s !== 'offline';
+  $('bStop').disabled = !ctl || !up || (s !== 'online' && s !== 'starting');
+  $('bKill').disabled = !ctl || !up || s === 'offline' || s === 'installing';
+  $('cin').disabled = $('bSend').disabled = $('bClear').disabled = !ctl;
+  const bar = $('bar');
+  bar.style.display = up && st.task ? 'block' : 'none'; bar.textContent = up ? st.task : '';
+  $('vcur').textContent = m.version ? `Installed: ${m.kind} ${m.version}` : '';
+  if (v.mine) {
+    $('saddr').textContent = m.port ? `This server has its own port: <ADDRESS>:${m.port}. Players use the host's address followed by this port. The host must forward TCP port ${m.port} on its router for players outside its network.` : '';
+    const t = (HI[v.aid] || {}).stats;
+    $('sraminfo').textContent = (st.xmx ? `Currently running with ${gb(st.xmx)}. ` : '') + (t ? `Host has ${gb(t.totalMb)} total, about ${gb(t.availMb)} available now.` : '');
+  }
+}
+$('bStart').onclick = () => act('start');
+$('bStop').onclick = () => act('stop');
+$('bKill').onclick = async () => { if (await ui.confirm('Kill the server?', 'The process is ended immediately. Unsaved world data can be lost.', { ok: 'Kill server', danger: true })) act('kill'); };
+
+/* ---------- console ---------- */
+function renderConsole(v) {
+  const el = $('con'), near = el.scrollHeight - el.scrollTop - el.clientHeight < 60;
+  el.innerHTML = v ? v.text.split('\n').map(l => {
+    const c = /ERROR|Exception|FATAL/.test(l) ? 'e' : /WARN/.test(l) ? 'w' : '';
+    return c ? `<span class="${c}">${esc(l)}</span>` : esc(l);
+  }).join('\n') : '';
+  if (near) el.scrollTop = el.scrollHeight;
+}
+$('bClear').onclick = () => { $('con').innerHTML = ''; act('clear'); };
+const hist = []; let hi = 0;
+function send() {
+  const v = $('cin').value.trim(); if (!v) return;
+  hist.push(v); hi = hist.length; $('cin').value = '';
+  act('input', { text: v });
+}
+$('bSend').onclick = send;
+$('cin').onkeydown = e => {
+  if (e.key === 'Enter') send();
+  else if (e.key === 'ArrowUp' && hi > 0) { $('cin').value = hist[--hi]; e.preventDefault(); }
+  else if (e.key === 'ArrowDown') { hi = Math.min(hi + 1, hist.length); $('cin').value = hist[hi] || ''; }
+};
+
+/* ---------- tabs ---------- */
+document.querySelectorAll('nav a').forEach(a => a.onclick = () => {
+  document.querySelectorAll('nav a').forEach(x => x.classList.toggle('on', x === a));
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('on', t.id === 't-' + a.dataset.t));
+  if (a.dataset.t === 'versions' && !$('vlist').children.length) loadVersions();
+  if (a.dataset.t === 'files') loadDir(cwd);
+  if (a.dataset.t === 'plugins') pSearch(false);
+});
+
+/* ---------- files ---------- */
+let cwd = '', editing = null;
+const join = (a, b) => a ? a + '/' + b : b;
+const fmt = n => n < 1024 ? n + ' B' : n < 1048576 ? (n / 1024).toFixed(1) + ' KB' : (n / 1048576).toFixed(1) + ' MB';
+async function loadDir(p) {
+  try {
+    const items = await rpc('ls', { path: p });
+    cwd = p;
+    const parts = p ? p.split('/') : [];
+    $('crumbs').innerHTML = '<a data-p="">server</a>' + parts.map((x, i) => ` / <a data-p="${esc(parts.slice(0, i + 1).join('/'))}">${esc(x)}</a>`).join('');
+    $('crumbs').querySelectorAll('a').forEach(a => a.onclick = () => loadDir(a.dataset.p));
+    const tb = $('ftb'); tb.innerHTML = '';
+    if (!items.length) tb.innerHTML = '<tr><td colspan="4" style="color:var(--mu);padding:18px">This folder is empty.</td></tr>';
+    items.forEach(f => {
+      const tr = document.createElement('tr'); tr.className = 'f';
+      tr.innerHTML = `<td class="n"><a>${esc(f.name)}${f.dir ? '/' : ''}</a></td><td>${f.dir ? '' : fmt(f.size)}</td><td>${new Date(f.mtime).toLocaleString()}</td><td class="act">${f.dir ? '' : '<button data-a="e">Edit</button> '}<button data-a="r">Rename</button> <button data-a="d">Delete</button></td>`;
+      const full = join(p, f.name);
+      tr.querySelector('.n a').onclick = () => f.dir ? loadDir(full) : openFile(full);
+      tr.querySelectorAll('button').forEach(b => b.onclick = async () => {
+        if (b.dataset.a === 'e') openFile(full);
+        if (b.dataset.a === 'r') { const n = await ui.prompt('Rename ' + f.name, f.name, 'Rename'); if (n && n !== f.name) { await act('rename', { from: full, to: join(p, n) }); loadDir(p); } }
+        if (b.dataset.a === 'd' && await ui.confirm('Delete ' + f.name + '?', f.dir ? 'The folder and everything inside it will be removed.' : 'This cannot be undone.', { ok: 'Delete', danger: true })) { await act('delete', { path: full }); loadDir(p); }
+      });
+      tb.appendChild(tr);
+    });
+  } catch (e) { toast(e.message, true); }
+}
+$('bRef').onclick = () => loadDir(cwd);
+$('bNewD').onclick = async () => { const n = await ui.prompt('New folder', '', 'Create'); if (n) { await act('mkdir', { path: join(cwd, n) }); loadDir(cwd); } };
+$('bNewF').onclick = async () => { const n = await ui.prompt('New file', '', 'Create'); if (n) { await act('write', { path: join(cwd, n), content: '' }); loadDir(cwd); openFile(join(cwd, n)); } };
+async function openFile(p) {
+  try {
+    const txt = await rpc('read', { path: p });
+    editing = p; $('efile').textContent = p; $('etext').value = txt; $('edirty').textContent = '';
+    $('browser').style.display = 'none'; $('editor').style.display = 'flex'; $('etext').focus();
+  } catch (e) { toast(e.message, true); }
+}
+async function save() {
+  if (editing === null) return;
+  await act('write', { path: editing, content: $('etext').value });
+  $('edirty').textContent = ''; toast('Saved ' + editing.split('/').pop());
+}
+async function closeEd() {
+  if ($('edirty').textContent && !await ui.confirm('Discard unsaved changes?', 'Your edits to this file have not been saved.', { ok: 'Discard', danger: true })) return;
+  editing = null; $('editor').style.display = 'none'; $('browser').style.display = 'flex'; loadDir(cwd);
+}
+$('bSave').onclick = save; $('bClose').onclick = closeEd;
+$('etext').oninput = () => $('edirty').textContent = 'Unsaved changes';
+$('etext').onkeydown = e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); save(); }
+  if (e.key === 'Tab') { e.preventDefault(); const t = e.target, s = t.selectionStart; t.setRangeText('  ', s, t.selectionEnd, 'end'); $('edirty').textContent = 'Unsaved changes'; }
+};
+
+/* ---------- uploads ---------- */
+let upDir = '';
+function pick(dir, accept) { upDir = dir; $('upin').accept = accept; $('upin').value = ''; $('upin').click(); }
+$('bUp').onclick = () => pick(cwd, '');
+$('bPl').onclick = () => pick('plugins', '.jar');
+const readB64 = f => new Promise((res, rej) => {
+  const r = new FileReader();
+  r.onload = () => res(r.result.split(',')[1]);
+  r.onerror = () => rej(new Error('Could not read ' + f.name));
+  r.readAsDataURL(f);
+});
+$('upin').onchange = async e => {
+  const files = [...e.target.files]; let ok = 0;
+  for (const f of files) {
+    if (f.size > 11 * 1048576) { toast(`${f.name} is over the 11 MB upload limit`, true); continue; }
+    toast(`Uploading ${f.name}…`);
+    try {
+      const b64 = await readB64(f), chunks = [];
+      for (let i = 0; i < b64.length; i += 1000000) chunks.push(b64.slice(i, i + 1000000));
+      await rpc('upload', { path: join(upDir, f.name), chunks }, 120000); ok++;
+    } catch (err) { toast(err.message, true); }
+  }
+  if (ok) toast(`Uploaded ${ok} file${ok > 1 ? 's' : ''}` + (upDir === 'plugins' ? '. Restart the server to load them.' : ''));
+  if (editing === null) loadDir(cwd);
+};
+
+/* ---------- versions ---------- */
+let vers = [];
+async function loadVersions() {
+  $('vlist').innerHTML = '<div class="vrow" style="color:var(--mu)">Loading versions…</div>';
+  try { vers = await act('versions', { kind: $('vkind').value }, 40000); drawVersions(); }
+  catch { $('vlist').innerHTML = '<div class="vrow" style="color:var(--mu)">Could not load versions.</div>'; }
+}
+function drawVersions() {
+  const q = $('vq').value.trim(), kind = $('vkind').value, m = (SV[cur] || {}).meta || {};
+  const list = vers.filter(v => v.startsWith(q));
+  $('vlist').innerHTML = '';
+  list.forEach(v => {
+    const isCur = m.kind === kind && m.version === v;
+    const r = document.createElement('div'); r.className = 'vrow';
+    r.innerHTML = `<span class="v mono">${v}</span>${isCur ? '<span class="tag">installed</span>' : ''}<button>${isCur ? 'Reinstall' : 'Install'}</button>`;
+    r.querySelector('button').onclick = async () => {
+      if (!await ui.confirm(`Install ${kind} ${v}?`, 'This deletes server.jar and renames the plugins folder to old_plugins. Worlds and configs are kept.', { ok: 'Install' })) return;
+      toast('Installing ' + kind + ' ' + v + '…');
+      try { await rpc('install', { kind, version: v }, 0); toast('Installed ' + kind + ' ' + v); drawVersions(); }
+      catch (e) { toast(e.message, true); }
+    };
+    $('vlist').appendChild(r);
+  });
+  if (!list.length) $('vlist').innerHTML = '<div class="vrow" style="color:var(--mu)">No versions match that filter.</div>';
+}
+$('vkind').onchange = loadVersions;
+$('vq').oninput = drawVersions;
+
+/* ---------- plugins (Modrinth) ---------- */
+const LOADERS = {
+  paper: ['paper', 'spigot', 'bukkit'], spigot: ['spigot', 'bukkit'], bukkit: ['bukkit'],
+  purpur: ['purpur', 'paper', 'spigot', 'bukkit'], folia: ['folia']
+};
+let pm = 'auto', poff = 0, ptok = 0, pkey = '', ptimer;
+const pmsg = t => `<div class="vrow" style="color:var(--mu)">${esc(t)}</div>`;
+function pTarget() {
+  const m = (SV[cur] || {}).meta || {};
+  if (pm === 'auto') return m.version ? { kind: m.kind, mc: m.version } : null;
+  const mc = $('pver').value.trim();
+  return /^\d+\.\d+(\.\d+)?$/.test(mc) ? { kind: $('pkind').value, mc } : null;
+}
+function setMode(m) {
+  pm = m;
+  $('pmA').classList.toggle('on', m === 'auto'); $('pmM').classList.toggle('on', m === 'manual');
+  $('pman').hidden = m === 'auto';
+  $('psort').value = m === 'manual' ? 'newest' : 'downloads';
+  pSearch(false);
+}
+$('pmA').onclick = () => setMode('auto');
+$('pmM').onclick = () => setMode('manual');
+['pq', 'pver'].forEach(id => $(id).oninput = () => { clearTimeout(ptimer); ptimer = setTimeout(() => pSearch(false), 400); });
+['pkind', 'psort'].forEach(id => $(id).onchange = () => pSearch(false));
+async function pSearch(more) {
+  const t = pTarget(), box = $('plist'), mine = ++ptok;
+  $('pauto').textContent = pm === 'auto' && t ? `Using this server: ${t.kind} ${t.mc}` : '';
+  if (!t) { box.innerHTML = pmsg(pm === 'auto' ? 'No server version installed yet. Install one in Versions, or switch to Manual.' : 'Enter a Minecraft version, for example 1.21.4.'); return; }
+  if (!LOADERS[t.kind]) { box.innerHTML = pmsg(`${t.kind} servers cannot run plugins. Install Paper from the Versions tab.`); return; }
+  if (!more) { poff = 0; box.innerHTML = pmsg('Searching Modrinth…'); }
+  const facets = [['project_type:plugin'], ['versions:' + t.mc], LOADERS[t.kind].map(l => 'categories:' + l)];
+  const url = `https://api.modrinth.com/v2/search?query=${encodeURIComponent($('pq').value.trim())}&facets=${encodeURIComponent(JSON.stringify(facets))}&index=${$('psort').value}&limit=20&offset=${poff}`;
+  try {
+    const j = await (await fetch(url)).json();
+    if (mine !== ptok) return;
+    if (!more) box.innerHTML = '';
+    box.querySelector('.more')?.remove();
+    if (!j.hits) throw new Error('Modrinth returned an error');
+    if (!j.hits.length && !more) { box.innerHTML = pmsg(`No plugins found for ${t.kind} ${t.mc}.`); return; }
+    j.hits.forEach(h => box.appendChild(pRow(h, t)));
+    poff += j.hits.length;
+    if (poff < j.total_hits) {
+      const b = document.createElement('div'); b.className = 'vrow more';
+      b.innerHTML = '<button>Load more</button>'; b.firstChild.onclick = () => pSearch(true);
+      box.appendChild(b);
+    }
+  } catch (e) { if (mine === ptok) box.innerHTML = pmsg('Could not reach Modrinth: ' + e.message); }
+}
+function pRow(h, t) {
+  const r = document.createElement('div'); r.className = 'prow';
+  const icon = h.icon_url ? `<img src="${esc(h.icon_url)}" alt="">` : `<div class="ph">${esc(h.title[0] || '?')}</div>`;
+  r.innerHTML = `${icon}<div class="pi"><div><a href="https://modrinth.com/plugin/${esc(h.slug)}" target="_blank" rel="noopener"><b>${esc(h.title)}</b></a> <span class="pm">by ${esc(h.author)} · ${h.downloads.toLocaleString()} downloads</span></div><div class="pd">${esc(h.description)}</div></div><button class="b-go">Install</button>`;
+  const b = r.querySelector('button');
+  b.onclick = async () => {
+    b.disabled = true; b.textContent = 'Installing…';
+    try {
+      const args = pm === 'auto' ? { project: h.project_id } : { project: h.project_id, kind: t.kind, mc: t.mc };
+      const d = await rpc('modrinth', args, 120000);
+      toast(`Installed ${d.file} (${d.version}). Restart the server to load it.`);
+      if (d.required.length) toast('Also needs: ' + d.required.join(', '));
+      b.textContent = 'Installed';
+    } catch (e) { toast(e.message, true); b.disabled = false; b.textContent = 'Install'; }
+  };
+  return r;
+}
+
+/* ---------- users (owner) ---------- */
+async function loadMembers() {
+  const v = SV[cur]; if (!v) return;
+  try { renderMembers(await hrpc(v.aid, 'members', { sid: v.sid })); } catch (e) { toast(e.message, true); }
+}
+function renderMembers(rows) {
+  const v = SV[cur]; if (!v) return;
+  const tb = $('utb'); tb.innerHTML = '';
+  if (!rows.length) tb.innerHTML = '<tr><td colspan="5" style="color:var(--mu);padding:18px">Nobody else has access to this server.</td></tr>';
+  rows.forEach(m => {
+    const uid = m.uid, p = m.perms, tr = document.createElement('tr');
+    tr.innerHTML = `<td>${esc(m.email || uid)}</td>` + ['control', 'files', 'versions'].map(k => `<td><input type="checkbox" data-k="${k}" ${p[k] ? 'checked' : ''}></td>`).join('') + '<td class="act"><button>Remove</button></td>';
+    tr.querySelectorAll('input').forEach(i => i.onchange = () => hrpc(v.aid, 'setperm', { target: uid, sid: v.sid, key: i.dataset.k, value: i.checked }).catch(e => { toast(e.message, true); i.checked = !i.checked; }));
+    tr.querySelector('button').onclick = async () => {
+      if (!await ui.confirm('Remove ' + (m.email || 'this user') + '?', 'They lose access to this server.', { ok: 'Remove', danger: true })) return;
+      try { await hrpc(v.aid, 'removeuser', { target: uid, sid: v.sid }); loadMembers(); } catch (e) { toast(e.message, true); }
+    };
+    tb.appendChild(tr);
+  });
+}
+$('bAddU').onclick = async () => {
+  const v = SV[cur], email = $('uemail').value.trim(); if (!email) return;
+  try {
+    const uid = (await db.ref('emailIndex/' + ekey(email)).once('value')).val();
+    if (!uid) { toast('No account with that email. They need to create one first.', true); return; }
+    if (uid === me.uid) { toast('That is your own account.', true); return; }
+    await hrpc(v.aid, 'adduser', { target: uid, email, sid: v.sid, perms: { control: $('pc').checked, files: $('pf').checked, versions: $('pv').checked } });
+    $('uemail').value = ''; toast('Added ' + email); loadMembers();
+  } catch (e) { toast(e.message, true); }
+};
+
+/* ---------- settings (owner) ---------- */
+$('bSet').onclick = async () => {
+  const r = sram.get(), name = $('sn').value.trim();
+  if (r.maxRam < 512 || (r.mode === 'auto' && r.minRam < 512)) { toast('Memory must be at least 512 MB', true); return; }
+  if (r.mode === 'auto' && r.minRam > r.maxRam) { toast('Minimum cannot be higher than maximum', true); return; }
+  try { await rpc('setconfig', { name, ...r }); toast('Saved. Memory changes apply the next time the server starts.'); } catch (e) { toast(e.message, true); }
+};
+$('bDel').onclick = async () => {
+  const v = SV[cur], name = (v.meta || {}).name || 'this server';
+  if (!await ui.confirm('Delete ' + name + '?', 'The server, its world and all its files are removed from the host.', { ok: 'Delete server', danger: true })) return;
+  try { await hrpc(v.aid, 'delete', { id: v.sid }); toast('Deleted ' + name); go('home'); } catch (e) { toast(e.message, true); }
+};
+</script>
+</body>
+</html>
